@@ -44,3 +44,5 @@ ui: ## Launches the Streamlit interface
 # -------------------------------------------------------------------------
 clean: ## Removes temporary files and Python cache folders
 	Get-ChildItem -Path . -Include __pycache__,*.pyc,*.pyo -Recurse | Remove-Item -Force -Recurse
+
+

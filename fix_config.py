@@ -16,6 +16,8 @@ headless = true
 port = 8501
 """
 
+
+
 # Writes the configuration file explicitly in UTF-8 to avoid encoding issues.
 with open(".streamlit/config.toml", "w", encoding="utf-8") as f:
     f.write(config_content)
