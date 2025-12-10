@@ -1,94 +1,139 @@
-Veritas Quant – AI-Driven ESG & HRP Allocation Engine
+Veritas Quant
+AI-Driven ESG Scoring and Hierarchical Risk Parity Allocation Engine
 
-Next-generation Asset Management platform fusing Sovereign Generative AI (Local LLM) with Hierarchical Risk Parity (HRP) optimization.
+Veritas Quant (codename: LLM-4-ESG-in-AM) is a next-generation asset-management platform unifying three disciplines:
+
+Autonomous Data Engineering
+
+Generative AI-based ESG Scoring
+
+Hierarchical Risk Parity (HRP) Portfolio Optimization
+
+The system delivers explainable ESG intelligence and mathematically stable portfolio allocation, addressing structural weaknesses in both modern ESG research and traditional Markowitz frameworks.
 
 1. Executive Summary
 
-Veritas Quant (codenamed LLM-4-ESG-in-AM) addresses the two main failures of modern asset management: the instability of correlation matrices (Markowitz failure) and the superficiality of ESG ratings (Greenwashing).
+Modern asset management faces two persistent issues:
 
-This platform acts as an Autonomous Quant Factory:
+Instability and overfitting in covariance inversion models (Markowitz failure).
 
-Data Acquisition: An autonomous agent scrapes unstructured web data (Impact Reports, News) utilizing DuckDuckGo search heuristics without human input.
+Shallow and inconsistent ESG ratings leading to greenwashing.
 
-Semantic Analysis: A local Large Language Model (Llama 3) reads, understands, and scores ESG risks in real-time, enforcing a JSON schema for structured output.
+Veritas Quant tackles these problems through a fully autonomous architecture:
 
-Quantitative Allocation: A mathematically robust engine allocates capital using Hierarchical Risk Parity (HRP), utilizing graph theory and recursive bisection to prioritize diversification over naive return maximization.
+Data Acquisition
+An agentic scraper dynamically discovers corporate sustainability reports using DuckDuckGo heuristics without requiring static URLs.
+
+Semantic Intelligence
+A local or cloud-based LLM (Llama 3 or GPT) reads sustainability disclosures and converts them into structured ESG scores with enforced JSON schemas.
+
+Quantitative Allocation
+A Hierarchical Risk Parity optimizer allocates capital through clustering, quasi-diagonalization, and recursive variance-based bisection.
+
+The result is a pipeline capable of ingesting raw unstructured text and outputting a mathematically robust portfolio.
 
 2. Architectural Design
 
-The system follows a Modular Monolith pattern orchestrated via Docker, ensuring strict separation between Data Engineering, Intelligence, and Quantitative Finance.
-
-System Diagram
+The platform follows a modular monolith design with clearly separated data, intelligence, and quant layers, orchestrated through Docker.
 
 graph TD
-    subgraph "Data Layer (The Collector)"
+    subgraph "Data Layer (Collector)"
         Agent[Autonomous Scraper Agent]
         Web[(Unstructured Web Data)]
-        LLM[Generative AI (Llama 3 / GPT)]
-        DB[(PostgreSQL Governance)]
+        LLM[Generative AI Engine]
+        DB[(PostgreSQL Database)]
     end
 
-    subgraph "Quant Layer (The Engine)"
-        API[FastAPI Calculation Engine]
-        Market[Market Data (YFinance)]
-        HRP[HRP Optimizer (SciPy)]
+    subgraph "Quant Layer (Engine)"
+        API[FastAPI Engine]
+        Market[YFinance Market Data]
+        HRP[HRP Optimizer]
     end
 
     subgraph "Presentation Layer"
-        UI[Streamlit Pro Dashboard]
+        UI[Streamlit Dashboard]
     end
 
     Agent -->|1. Search & Scrape| Web
     Web -->|2. Raw Text| LLM
-    LLM -->|3. Structured ESG Score| DB
+    LLM -->|3. ESG Score| DB
     UI -->|4. Request Optimization| API
-    API -->|5. Fetch Filtered Universe| DB
+    API -->|5. Filter Universe| DB
     API -->|6. Fetch Prices| Market
-    API -->|7. Cluster & Allocate| HRP
-    HRP -->|8. Optimal Weights| UI
-
+    API -->|7. Optimize| HRP
+    HRP -->|8. Allocation| UI
 
 Why this Architecture?
 
-Data Governance: All AI-generated scores are persisted in PostgreSQL for auditability. We never re-run expensive AI inference on the same document twice.
+Data governance
+All AI-generated outputs are persisted for auditability and reproducibility. Expensive LLM inference is never repeated unnecessarily.
 
-Sovereignty: The system supports Local Inference (Ollama), allowing sensitive financial analysis without data leaving the secure infrastructure.
+Sovereignty
+Local inference via Ollama ensures full operational capability without sending sensitive corporate data to external providers.
 
-Resilience: The Scraper uses an Autonomous Discovery Agent to find documents dynamically even if URLs change.
+Resilience
+The agent can rediscover sustainability documents even when corporate websites change structure.
 
 3. The Intelligence Layer: Autonomous AI Agent
 
-Unlike traditional scrapers that require hardcoded URLs, Veritas Quant utilizes an Agentic Workflow.
+Unlike static scrapers, Veritas Quant uses an agentic workflow capable of:
 
-Workflow Logic
+Generating domain-specific queries such as
+"Tesla sustainability report 2024 summary".
 
-Discovery: The agent generates search queries (e.g., "Tesla Sustainability Report 2024 pdf").
+Extracting semantic text from investor-relations pages using BeautifulSoup and heuristic filtering.
 
-Extraction: Utilizes BeautifulSoup with user-agent rotation to extract readable text from investor relations pages.
+Applying strict prompt engineering to produce normalized JSON output.
 
-Reasoning: The text is fed to Llama 3 (or OpenAI) with a strict prompt engineering template to enforce JSON output.
+Prompt Strategy (simplified):
+Act as a Senior ESG Analyst.
+Read the following document.
+Output a score from 0–100 and a one-sentence rationale.
 
-Prompt Strategy: "Act as a Senior ESG Analyst. Read the following 10k characters. Output a score from 0-100 and a 1-sentence rationale based on carbon intensity and governance."
+The system supports both:
 
-4. Quantitative Framework (Mathematics)
+Cloud inference (OpenAI GPT models).
 
-The allocation engine moves beyond Mean-Variance optimization by implementing Hierarchical Risk Parity (HRP), as introduced by Marcos Lopez de Prado (2016).
+Local inference (Llama 3 via Ollama).
 
-A. Distance Metric Construction
+4. Quantitative Framework
 
-We convert the correlation matrix into a distance matrix to prepare for clustering. This transforms financial correlation into a metric space satisfying triangular inequality.
+The engine implements Hierarchical Risk Parity as proposed by Marcos López de Prado (2016).
 
-$$d_{i,j} = \sqrt{0.5 \times (1 - \rho_{i,j})}$$
+A. Distance Metric
 
-Where:
+Correlation is mapped to a distance satisfying metric properties:
 
-$\rho_{i,j}$ is the correlation coefficient between asset $i$ and $j$.
+𝑑
+𝑖
+,
+𝑗
+=
+0.5
+×
+(
+1
+−
+𝜌
+𝑖
+,
+𝑗
+)
+d
+i,j
+	​
 
-$d_{i,j}$ is the distance metric ($0 \le d \le 1$).
+=
+0.5×(1−ρ
+i,j
+	​
 
-B. Hierarchical Clustering (Tree Structure)
+)
+	​
 
-We apply Ward’s Method to minimize the variance within clusters. This groups assets that behave similarly (e.g., Tech stocks vs. Oil stocks) into a Dendrogram.
+B. Hierarchical Clustering
+
+Assets are grouped using Ward’s method to minimize intra-cluster variance.
 
 graph BT
     AAPL --> TechCluster
@@ -98,128 +143,164 @@ graph BT
     TechCluster --> Market
     EnergyCluster --> Market
 
-
 C. Quasi-Diagonalization
 
-The covariance matrix is reordered based on the clustering tree. This places similar assets adjacent to each other, revealing the true hierarchical structure of risk (Matrix Diagonalization).
+The covariance matrix is reordered based on the hierarchical tree, exposing block-diagonal risk structures.
 
-D. Recursive Bisection (Capital Allocation)
+D. Recursive Bisection
 
-Capital is allocated top-down through the tree. At each split, weights are assigned inversely to the variance of the sub-clusters.
+Weights are allocated recursively through the tree:
 
-$$\alpha = 1 - \frac{Var_{left}}{Var_{left} + Var_{right}}$$
+𝛼
+=
+1
+−
+𝑉
+𝑎
+𝑟
+𝑙
+𝑒
+𝑓
+𝑡
+𝑉
+𝑎
+𝑟
+𝑙
+𝑒
+𝑓
+𝑡
++
+𝑉
+𝑎
+𝑟
+𝑟
+𝑖
+𝑔
+ℎ
+𝑡
+α=1−
+Var
+left
+	​
 
-Result: A portfolio that is robust to correlation shocks and requires no inversion of the covariance matrix (numerically stable).
++Var
+right
+	​
 
-5. Visual Interface (TradingView Style)
+Var
+left
+	​
 
-The platform features a Dark-Mode Professional Dashboard built with Streamlit and Plotly.
+	​
 
-1. Strategy Configuration
 
-Define the universe, set the AI-filtering strictness threshold, and choose the time horizon.
+This avoids covariance inversion entirely, providing numerical stability and robust diversification.
 
-2. HRP Allocation & AI Audit
+5. Visual Frontend (TradingView-Inspired)
 
-Visualize the optimal HRP weights and audit the "Rationale" generated by the AI for each asset.
+A dark-mode professional dashboard built with Streamlit and Plotly provides:
 
-(Place your screenshots in docs/images/ to enable these previews)
+Universe selection
 
-6. Installation & Usage
+ESG filtering controls
 
+HRP allocation visualization
+
+ESG audit tables
+
+Real-time model explanations
+
+Screenshots can be added in docs/images/.
+
+6. Installation & Usage Guide
 Prerequisites
 
-Docker Desktop (Required for Database & Environment)
+Docker Desktop
 
-Ollama (Optional, for free local AI) -> ollama run llama3
+Python 3.11
 
-1. Setup Environment
+(Optional) Ollama for local AI inference:
 
-# Clone repository
-git clone [https://github.com/YOUR_USERNAME/Veritas-Quant-ESG-Engine.git](https://github.com/YOUR_USERNAME/Veritas-Quant-ESG-Engine.git)
+ollama run llama3
+
+Step 1. Clone Repository
+git clone https://github.com/YOUR_USERNAME/Veritas-Quant-ESG-Engine.git
 cd Veritas-Quant-ESG-Engine
 
-# Create environment file from template
-# Windows
+
+Create environment file:
+
+Windows
+
 copy deployment\.env.example .env
-# Linux/Mac
+
+
+Linux/Mac
+
 cp deployment/.env.example .env
 
-
-2. Launch Infrastructure (Docker)
-
-# Starts PostgreSQL and Python Environment
+Step 2. Start Infrastructure
 docker compose up --build -d
 
-
-3. Run the Data Pipeline (Agent)
-
-This step activates the autonomous agent to scrape the web and populate the database.
-
-# Using the Makefile shortcut
+Step 3. Run Autonomous ESG Pipeline
 make pipeline
-# OR manual command
+
+
+Or:
+
 py -m scripts.run_esg_pipeline
 
+Step 4. Launch the Platform
 
-4. Launch the Platform
-
-Terminal 1: Calculation Engine
+Backend:
 
 make api
-# OR: py -m uvicorn src.engine.api_server:app --reload --port 8000
 
 
-Terminal 2: User Interface
+Frontend:
 
 make ui
-# OR: py -m streamlit run app.py
 
-
-7. Project Structure (Detailed)
-
-The codebase follows Clean Architecture principles to ensure scalability.
-
+7. Project Structure
 Veritas-Quant/
-├── config/                 # [CONFIGURATION]
-│   ├── esg_criteria.json   # Rules for the AI (Keywords, Exclusion sectors)
-│   └── settings.py         # Pydantic Settings (DB Creds, API Keys) management
+├── config/
+│   ├── esg_criteria.json
+│   └── settings.py
 │
-├── src/                    # [SOURCE CODE]
-│   ├── collector/          # [DATA INGESTION LAYER]
-│   │   ├── scraper.py      # AGENT: Autonomous Web Scraper (DuckDuckGo/BeautifulSoup)
-│   │   ├── llm_analyzer.py # BRAIN: Hybrid Client (Ollama Local / OpenAI Cloud)
-│   │   └── loader.py       # MARKET: Robust Data Fetcher (YFinance wrapper)
+├── src/
+│   ├── collector/
+│   │   ├── scraper.py
+│   │   ├── llm_analyzer.py
+│   │   └── loader.py
 │   │
-│   ├── engine/             # [QUANT CORE LAYER]
-│   │   ├── hrp_optimizer.py # MATH: Implementation of Lopez de Prado's HRP Algo
-│   │   ├── db_manager.py   # STORAGE: SQL Persistence (SQLAlchemy ORM)
-│   │   ├── api_server.py   # EXPOSURE: FastAPI Entrypoint for the Frontend
-│   │   └── utils.py        # TOOLS: Log-returns and Covariance calculations
+│   ├── engine/
+│   │   ├── hrp_optimizer.py
+│   │   ├── db_manager.py
+│   │   ├── api_server.py
+│   │   └── utils.py
 │
-├── deployment/             # [INFRASTRUCTURE]
-│   ├── docker-compose.yml  # Container orchestration (Postgres + Python App)
-│   └── Dockerfile          # Python environment definition (Playwright support)
+├── deployment/
+│   ├── docker-compose.yml
+│   └── Dockerfile
 │
-├── scripts/                # [ORCHESTRATION]
-│   └── run_esg_pipeline.py # Script connecting Scraper -> AI -> Database
+├── scripts/
+│   └── run_esg_pipeline.py
 │
-├── app.py                  # [FRONTEND] Streamlit Application (TradingView Style)
-└── Makefile                # [AUTOMATION] Shortcuts for dev commands
-
+├── app.py
+└── Makefile
 
 8. Continuous Integration
 
-Reliability is ensured via GitHub Actions:
+GitHub Actions ensure:
 
-Type Safety: MyPy ensures strict typing for financial calculations.
+Static typing via MyPy
 
-Linting: Ruff enforces PEP8 standards.
+Linting via Ruff
 
-Testing: Pytest validates the mathematical accuracy of the HRP engine.
+Unit tests via Pytest
+
+Security scanning for Python dependencies
 
 9. License
 
 Distributed under the MIT License.
-
-Veritas Quant – Where Sovereign AI meets Convex Optimization.
