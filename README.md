@@ -1,4 +1,4 @@
-# **Veritas Quant – AI-Driven ESG & HRP Allocation Engine**
+# **LLM-4-ESG-in-AM / AI-Driven ESG & HRP Allocation Engine**
 
 *A next-generation autonomous quant engine fusing Generative AI, ESG intelligence, and Hierarchical Risk Parity optimization.*
 
@@ -6,7 +6,7 @@
 
 ## **Executive Summary**
 
-Veritas Quant automates the full ESG-aware investment workflow, delivering explainable, data-driven and mathematically robust portfolio allocation.
+LLM-4-ESG-in-AM automates the full ESG-aware investment workflow, delivering explainable, data-driven and mathematically robust portfolio allocation.
 
 It addresses three major challenges in modern asset management:
 
@@ -31,7 +31,7 @@ It addresses three major challenges in modern asset management:
 
 ## **Interactive Dashboard (UI)**
 
-Veritas Quant includes a professional TradingView-style **Streamlit interface** for visualization and analysis of ESG scores and HRP weights.
+LLM-4-ESG-in-AM includes a professional TradingView-style **Streamlit interface** for visualization and analysis of ESG scores and HRP weights.
 
 ### **Key Capabilities**
 - Asset universe configuration  
@@ -55,7 +55,7 @@ http://localhost:8501
 
 ## **Architectural Overview**
 
-Veritas Quant adopts a **Modular Monolith** architecture, ensuring scalability, maintainability, and operational transparency.
+LLM-4-ESG-in-AM adopts a **Modular Monolith** architecture, ensuring scalability, maintainability, and operational transparency.
 
 ```
 Collector (Scraper + LLM)
@@ -110,7 +110,7 @@ graph TD
 
 # **Quantitative Framework (Mathematics)**
 
-Veritas Quant implements the **Hierarchical Risk Parity (HRP)** methodology by López de Prado.
+LLM-4-ESG-in-AM implements the **Hierarchical Risk Parity (HRP)** methodology by López de Prado.
 
 ---
 
@@ -171,8 +171,8 @@ $$
 
 ## **1. Clone repository**
 ```bash
-git clone https://github.com/YOUR_USERNAME/veritas-quant.git
-cd veritas-quant
+git clone https://github.com/YOUR_USERNAME/LLM-4-ESG-in-AM.git
+cd LLM-4-ESG-in-AM
 ```
 
 ---
@@ -257,6 +257,3 @@ src/
 Distributed under the MIT License.
 
 ---
-
-# **Veritas Quant**  
-Where Sovereign AI meets Convex Optimization.

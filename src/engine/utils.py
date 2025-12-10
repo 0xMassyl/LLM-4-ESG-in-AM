@@ -1,44 +1,36 @@
 import pandas as pd
 import numpy as np
 
-
 def calculate_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
     """
-    Computes log-returns from a price series.
-
-    Log-returns are preferred in quantitative finance because:
-      - they are time-additive (log returns sum across periods),
-      - they align better with statistical models assuming normality,
-      - they remain stable even when absolute price levels differ widely.
-
-    Formula:
-        r_t = ln(P_t / P_{t-1})
-
-    The implementation applies a one-step shift to align prices and then
-    computes the natural log safely over the entire DataFrame.
+    Calcule les rendements logarithmiques de manière robuste.
+    Ne supprime pas les lignes s'il manque juste une donnée.
     """
-    raw_returns = prices / prices.shift(1)
+    # 1. Tri par date pour être sûr
+    prices = prices.sort_index()
+    
+    # 2. Remplissage des trous (Forward Fill)
+    # Si le prix de mardi manque, on prend celui de lundi.
+    prices_filled = prices.ffill()
+    
+    # 3. Calcul des rendements : ln(P_t / P_{t-1})
+    raw_returns = prices_filled / prices_filled.shift(1)
+    
+    # 4. Nettoyage des infinis (division par 0)
+    raw_returns = raw_returns.replace([np.inf, -np.inf], np.nan)
+    
+    # 5. Logarithme
     log_returns_df = pd.DataFrame(np.log(raw_returns))
-
-    # Removes the first row, which cannot produce a valid return.
-    return log_returns_df.dropna()
-
+    
+    # 6. Remplacement des NaN restants par 0.0 (Pas de rendement ce jour-là)
+    # C'est la clé pour ne pas avoir une matrice vide !
+    log_returns_df = log_returns_df.fillna(0.0)
+    
+    # On supprime uniquement la toute première ligne (qui est toujours NaN/0 après le shift)
+    return log_returns_df.iloc[1:]
 
 def get_covariance_matrix(returns: pd.DataFrame) -> pd.DataFrame:
-    """
-    Computes the annualized covariance matrix of asset returns.
-
-    The scaling factor (252) approximates the number of trading days in a year,
-    making the output suitable for most risk management or portfolio models.
-    """
     return returns.cov() * 252
 
-
 def get_correlation_matrix(returns: pd.DataFrame) -> pd.DataFrame:
-    """
-    Computes the correlation matrix of asset returns.
-
-    Correlations describe linear dependence between assets, ranging from -1 to 1.
-    They are fundamental in clustering-based allocation methods such as HRP.
-    """
     return returns.corr()
