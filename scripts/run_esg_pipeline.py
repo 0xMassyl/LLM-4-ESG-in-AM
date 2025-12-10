@@ -3,59 +3,61 @@ from src.collector.scraper import SustainabilityScraper
 from src.collector.llm_analyzer import ESGAnalyzer
 
 def main():
-    print("Démarrage de l'Agent Autonome ESG")
+    print("Starting ESG Autonomous Agent")
     
-    # 1. Initialisation des services
-    print("1. Initialisation de la Base de Données et des Agents...")
+    # Initializing database and core components required for ingestion.
+    print("1. Initializing database and service agents...")
     init_db()
     scraper = SustainabilityScraper()
     analyzer = ESGAnalyzer()
     
-    # 2. LISTE DE CIBLES (Mode "Agent Autonome")
-    # Plus besoin de chercher les PDF manuellement. Donnez juste le nom.
+    # Target list used by the autonomous mode.
+    # The scraper identifies the latest ESG report through a search-based approach.
     tickers_to_scan = [
-        "TSLA",  # Tesla
-        "XOM",   # Exxon Mobil
-        "AAPL",  # Apple
-        "MSFT",  # Microsoft
-        "BP",    # BP
-        "SHEL",  # Shell
-        "NVDA"   # Nvidia
+        "TSLA",
+        "XOM",
+        "AAPL",
+        "MSFT",
+        "BP",
+        "SHEL",
+        "NVDA"
     ]
     
-    print(f" Cibles identifiées : {len(tickers_to_scan)} entreprises")
+    print(f" Identified targets: {len(tickers_to_scan)} companies")
     
-    # 3. Exécution de la boucle d'ingestion
+    # Main ingestion workflow. Each ticker is processed independently for better traceability.
     for ticker in tickers_to_scan:
-        print(f"\n [Agent] Traitement pour : {ticker}")
+        print(f"\n [Agent] Processing: {ticker}")
         
-        # A. COLLECTE INTELLIGENTE
-        # On passe url=None, ce qui force le scraper à utiliser DuckDuckGo
-        # pour trouver le dernier rapport ESG disponible.
+        # Fetches ESG-related text content. url=None forces the scraper to search online.
         text_content = scraper.fetch_company_data(ticker, url=None)
         
-        # Gestion des échecs (Site protégé, pas de résultat, etc.)
-        if text_content.startswith("Error"):
-            print(f" Échec collecte : {text_content}")
-            # On log l'échec en base pour garder une trace (Score 50 = Neutre/Inconnu)
-            save_score(ticker, 50.0, f"Data collection failed: {text_content}", source="Auto-Search")
+        # Logs collection failures and stores a neutral score for transparency.
+        if isinstance(text_content, str) and text_content.startswith("Error"):
+            print(f" Collection failed: {text_content}")
+            save_score(
+                ticker,
+                50.0,  # Neutral fallback score when no analysis can be performed.
+                f"Data collection failed: {text_content}",
+                source="Auto-Search"
+            )
             continue
         
-        # B. ANALYSE IA (Cerveau)
-        # L'IA lit le texte trouvé et attribue un score
+        # Runs LLM-based ESG scoring on extracted text content.
         analysis = analyzer.analyze_document(ticker, text_content)
         
+        # Extracts fields safely in case of partial or unexpected responses.
         score = analysis.get("esg_score", 50)
         rationale = analysis.get("rationale", "N/A")
         status = analysis.get("status", "unknown")
         
-        print(f"  Score IA ({status}) : {score}/100")
-        print(f"   Avis : {rationale[:100]}...")
+        print(f"  AI score ({status}): {score}/100")
+        print(f"   Rationale preview: {rationale[:100]}...")
         
-        # C. SAUVEGARDE (Gouvernance)
+        # Saves ESG score and qualitative insights for downstream evaluation.
         save_score(ticker, score, rationale, source="Auto-Search Web")
 
-    print("\nMission terminée. La base de données ESG est à jour.")
+    print("\nMission complete. ESG database updated.")
 
 if __name__ == "__main__":
     main()

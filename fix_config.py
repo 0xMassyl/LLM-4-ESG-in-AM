@@ -1,9 +1,9 @@
 import os
 
-# Création du dossier si inexistant
+# Ensures the Streamlit configuration directory exists.
 os.makedirs(".streamlit", exist_ok=True)
 
-# Le contenu du thème TradingView
+# TradingView-inspired dark theme for Streamlit.
 config_content = """[theme]
 primaryColor = "#2962ff"
 backgroundColor = "#131722"
@@ -16,9 +16,8 @@ headless = true
 port = 8501
 """
 
-# Écriture forcée en UTF-8 (C'est la clé du succès !)
+# Writes the configuration file explicitly in UTF-8 to avoid encoding issues.
 with open(".streamlit/config.toml", "w", encoding="utf-8") as f:
     f.write(config_content)
 
-print("✅ Fichier config.toml régénéré proprement en UTF-8.")
-
+print("Streamlit config.toml successfully regenerated with UTF-8 encoding.")

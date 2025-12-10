@@ -1,35 +1,36 @@
 [tool.poetry]
 name = "llm-4-esg-in-am"
 version = "0.1.0"
-description = "Hierarchical Risk Parity Portfolio Optimizer with LLM-driven ESG Filtering."
+description = "Hierarchical Risk Parity portfolio optimizer with LLM-based ESG filtering."
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
-packages = [{include = "src"}]
+packages = [{ include = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-# Core Data and Quant
+
+# Core data and quantitative analytics
 pandas = "^2.1.0"
 numpy = "^1.26.0"
 scipy = "^1.11.0"
 yfinance = "^0.2.36"
 
-# Database and Persistence
-sqlalchemy = "^2.0.25"        # ORM for PostgreSQL interaction
-asyncpg = "^0.29.0"           # Async driver for PostgreSQL
-psycopg2-binary = "^2.9.9"     # Postgres driver
+# Database and persistence
+sqlalchemy = "^2.0.25"
+asyncpg = "^0.29.0"
+psycopg2-binary = "^2.9.9"
 
-# Web/API
+# API and web framework
 fastapi = "^0.104.0"
 uvicorn = "^0.27.0"
-httpx = "^0.27.0"             # Async client for web requests
+httpx = "^0.27.0"
 
-# Scraping/LLM (Production & Enterprise requirements)
+# Scraping and LLM integration
 playwright = "^1.41.0"
 openai = "^1.10.0"
-tiktoken = "^0.6.0"           # Token counting for LLM cost control
-pydantic = "^2.6.1"           # Core validation
-pydantic-settings = "^2.2.1"   # Configuration management
+tiktoken = "^0.6.0"
+pydantic = "^2.6.1"
+pydantic-settings = "^2.2.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

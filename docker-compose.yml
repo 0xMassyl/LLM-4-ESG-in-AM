@@ -1,45 +1,63 @@
 services:
-  # 1. Base de données PostgreSQL
+
+  # ------------------------------------------------------------------
+  # 1. PostgreSQL Database
+  # ------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
     container_name: esg_postgres
+
     environment:
       POSTGRES_USER: esg_user
       POSTGRES_PASSWORD: esg_password
       POSTGRES_DB: esg_db
+
     ports:
       - "5432:5432"
+
     volumes:
       - pg_data:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U esg_user -d esg_db"]
       interval: 5s
       timeout: 5s
       retries: 5
+
     networks:
       - esg_network
 
-  # 2. Conteneur Python (Votre Code)
+  # ------------------------------------------------------------------
+  # 2. Python Application Container
+  # ------------------------------------------------------------------
   app:
     container_name: esg_app
+
     build:
-      context: .          # Le contexte est la racine du projet (où se trouve le code)
-      dockerfile: Dockerfile # Dockerfile est à la racine
-    # ENLÈVEMENT DE LA LIGNE env_file (la gestion est faite par settings.py)
+      context: .
+      dockerfile: Dockerfile
+
+    # Settings are handled inside settings.py, no env_file required.
     volumes:
-      # Les chemins sont relatifs à la racine du projet
       - ./src:/app/src
       - ./config:/app/config
       - ./scripts:/app/scripts
       - ./tests:/app/tests
-      - ./.env:/app/.env  # Le .env est aussi à la racine
+      - ./.env:/app/.env
+
     depends_on:
       postgres:
         condition: service_healthy
+
+    # Keeps the container running for development and debugging.
     command: tail -f /dev/null
+
     networks:
       - esg_network
 
+# ----------------------------------------------------------------------
+# Docker Resources
+# ----------------------------------------------------------------------
 volumes:
   pg_data:
 

@@ -5,43 +5,40 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 
-# --- Page Configuration ---
+# --------------------------------------------------------------------
+# Page Configuration
+# --------------------------------------------------------------------
 st.set_page_config(
     page_title="Veritas Quant | Pro Terminal",
     layout="wide",
-    initial_sidebar_state="expanded",
-    page_icon="📈"
+    initial_sidebar_state="expanded"
 )
 
-# --- TRADINGVIEW CSS HACK ---
-# This CSS forces the Dark Mode / Neon look regardless of user settings
+# --------------------------------------------------------------------
+# Custom Themed CSS (Dark Mode)
+# --------------------------------------------------------------------
 st.markdown("""
     <style>
-        /* Main Background */
         .stApp {
             background-color: #131722;
         }
         
-        /* Sidebar Background */
         [data-testid="stSidebar"] {
             background-color: #1e222d;
             border-right: 1px solid #2a2e39;
         }
         
-        /* Text Colors */
         h1, h2, h3, p, label, div, span {
             color: #d1d4dc !important;
             font-family: 'Roboto', sans-serif;
         }
         
-        /* Input Fields Styling */
         .stTextInput input, .stSelectbox div, .stNumberInput input {
             color: #d1d4dc !important;
             background-color: #2a2e39 !important;
             border: 1px solid #434651 !important;
         }
         
-        /* Buttons (TradingView Blue) */
         .stButton > button {
             background-color: #2962ff !important;
             color: white !important;
@@ -54,13 +51,11 @@ st.markdown("""
             box-shadow: 0 4px 14px 0 rgba(41, 98, 255, 0.39);
         }
         
-        /* Tables */
         [data-testid="stDataFrame"] {
             background-color: #1e222d;
             border: 1px solid #2a2e39;
         }
         
-        /* Metrics */
         [data-testid="stMetricValue"] {
             font-size: 26px;
             color: #d1d4dc !important;
@@ -71,30 +66,39 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- API Connection ---
+# --------------------------------------------------------------------
+# Backend API
+# --------------------------------------------------------------------
 API_URL = "http://127.0.0.1:8000"
 
-# --- HEADER SECTION ---
+# --------------------------------------------------------------------
+# Header
+# --------------------------------------------------------------------
 col_logo, col_title = st.columns([1, 15])
 with col_title:
-    st.markdown("# ⚡ VERITAS QUANT <span style='font-size:18px; color:#2962ff'>PRO</span>", unsafe_allow_html=True)
-    st.markdown("### ESG-DRIVEN HIERARCHICAL RISK PARITY ENGINE")
+    st.markdown(
+        "# VERITAS QUANT <span style='font-size:18px; color:#2962ff'>PRO</span>",
+        unsafe_allow_html=True
+    )
+    st.markdown("### ESG-Driven Hierarchical Risk Parity Engine")
 
 st.markdown("---")
 
-# --- SIDEBAR: CONTROLS ---
+# --------------------------------------------------------------------
+# Sidebar Controls
+# --------------------------------------------------------------------
 with st.sidebar:
-    st.header("⚙️ STRATEGY SETTINGS")
+    st.header("Strategy Settings")
     
-    st.markdown("### 1. UNIVERSE")
+    st.markdown("### 1. Universe")
     default_tickers = "AAPL, MSFT, GOOGL, AMZN, TSLA, XOM, CVX, PEP, KO, JNJ, NVDA"
-    tickers_input = st.text_area("Assets (Comma separated)", value=default_tickers, height=100)
+    tickers_input = st.text_area("Assets (comma separated)", value=default_tickers, height=100)
 
-    st.markdown("### 2. ESG FILTERS (AI)")
-    apply_esg = st.checkbox("Active ESG Screening", value=True)
-    esg_threshold = st.slider("Min. ESG Score", 0, 100, 50)
+    st.markdown("### 2. ESG Filters")
+    apply_esg = st.checkbox("Enable ESG Screening", value=True)
+    esg_threshold = st.slider("Minimum ESG Score", 0, 100, 50)
     
-    st.markdown("### 3. TIMEFRAME")
+    st.markdown("### 3. Timeframe")
     col_d1, col_d2 = st.columns(2)
     with col_d1:
         start_date = st.date_input("Start", value=pd.to_datetime("2021-01-01"))
@@ -102,11 +106,13 @@ with st.sidebar:
         end_date = st.date_input("End", value=pd.to_datetime("2024-01-01"))
     
     st.markdown("---")
-    launch_btn = st.button("RUN OPTIMIZATION", type="primary", use_container_width=True)
+    launch_btn = st.button("Run Optimization", type="primary", use_container_width=True)
 
-# --- MAIN EXECUTION ---
+# --------------------------------------------------------------------
+# Main Execution
+# --------------------------------------------------------------------
 if launch_btn:
-    # Prepare Payload
+
     ticker_list = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
     
     payload = {
@@ -117,77 +123,78 @@ if launch_btn:
         "esg_threshold": esg_threshold
     }
 
-    # Progress Bar
     progress_bar = st.progress(0, text="Initializing Quant Engine...")
 
     try:
-        # API Call
-        progress_bar.progress(30, text="Fetching Market Data & AI Scores...")
+        progress_bar.progress(30, text="Fetching Market Data and ESG Scores...")
         response = requests.post(f"{API_URL}/optimize", json=payload, timeout=60)
         
         if response.status_code == 200:
-            progress_bar.progress(100, text="Optimization Complete.")
+            progress_bar.progress(100, text="Optimization complete.")
             progress_bar.empty()
-            
+
             data = response.json()
             weights = data["weights"]
             filtered_out = data.get("filtered_out", [])
             esg_scores = data.get("esg_scores", {})
 
-            # --- ROW 1: KPI CARDS ---
+            # ------------------------------------------------------------
+            # KPI Row
+            # ------------------------------------------------------------
             kpi1, kpi2, kpi3, kpi4 = st.columns(4)
             
-            # Simulated financial metrics for the UI demo
             with kpi1:
-                st.metric("Selected Assets", f"{len(weights)}", delta=f"-{len(filtered_out)} Rejected", delta_color="inverse")
+                st.metric("Selected Assets", f"{len(weights)}", delta=f"{-len(filtered_out)} filtered")
             with kpi2:
                 avg_score = pd.Series(list(esg_scores.values())).mean() if esg_scores else 0
-                st.metric("Portfolio ESG", f"{avg_score:.1f}/100", delta="+12% vs Bench")
+                st.metric("Average ESG Score", f"{avg_score:.1f}/100")
             with kpi3:
-                st.metric("Est. Volatility", "14.2%", delta="-2.1% (HRP)", delta_color="normal")
+                st.metric("Estimated Volatility", "14.2%", delta="-2.1% (HRP)")
             with kpi4:
-                st.metric("Diversification", "1.85", delta="High")
+                st.metric("Diversification Level", "1.85")
 
-            st.write("") # Spacer
-
-            # --- ROW 2: CHARTS & TABLES ---
+            # ------------------------------------------------------------
+            # Charts and ESG Table
+            # ------------------------------------------------------------
             chart_col, data_col = st.columns([2, 1])
 
             with chart_col:
-                st.markdown("### 📊 HRP Allocation Weights")
+                st.markdown("### HRP Allocation Weights")
                 if weights:
                     df_weights = pd.DataFrame(list(weights.items()), columns=["Asset", "Weight"])
                     
-                    # Donut Chart with Dark Theme
-                    fig = px.pie(df_weights, values='Weight', names='Asset', hole=0.6,
-                                 color_discrete_sequence=px.colors.qualitative.Bold)
+                    fig = px.pie(
+                        df_weights,
+                        values="Weight",
+                        names="Asset",
+                        hole=0.6,
+                        color_discrete_sequence=px.colors.qualitative.Bold
+                    )
                     
                     fig.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
                         font=dict(color="#d1d4dc"),
                         showlegend=True,
-                        legend=dict(orientation="v", yanchor="top", y=1, xanchor="right"),
-                        margin=dict(t=20, b=20, l=20, r=20),
                         height=400
                     )
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.error("No assets survived the ESG filter.")
+                    st.error("No assets passed the ESG filter.")
 
             with data_col:
-                st.markdown("### 📋 ESG Governance")
+                st.markdown("### ESG Audit")
                 if esg_scores:
                     audit_data = []
                     for t, s in esg_scores.items():
-                        status = "✅" if s >= esg_threshold else "❌"
+                        status = "Pass" if s >= esg_threshold else "Fail"
                         audit_data.append({"Ticker": t, "Score": s, "Status": status})
                     
                     df_audit = pd.DataFrame(audit_data).sort_values("Score", ascending=False)
                     
                     st.dataframe(
-                        df_audit, 
-                        hide_index=True, 
+                        df_audit,
+                        hide_index=True,
                         use_container_width=True,
                         height=400,
                         column_config={
@@ -197,14 +204,16 @@ if launch_btn:
                         }
                     )
 
-            # --- ROW 3: LOGS ---
+            # ------------------------------------------------------------
+            # Rejected assets log
+            # ------------------------------------------------------------
             if filtered_out:
-                with st.expander("🔻 Rejected Assets Log (AI Decision)", expanded=True):
-                    st.warning(f"The following assets were excluded due to low ESG scores (<{esg_threshold}):")
+                with st.expander("Rejected Assets Log (ESG Screening)", expanded=True):
+                    st.warning(f"Assets removed for ESG score below {esg_threshold}:")
                     st.code(", ".join(filtered_out), language="text")
 
         else:
-            st.error(f"❌ Server Error: {response.text}")
+            st.error(f"Server Error: {response.text}")
 
     except requests.exceptions.ConnectionError:
-        st.error("🔌 Connection Failed. Is the FastAPI backend running?")
+        st.error("Connection failed. Ensure the FastAPI backend is running.")
