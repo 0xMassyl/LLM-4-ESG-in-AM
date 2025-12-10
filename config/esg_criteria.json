@@ -1,0 +1,40 @@
+{
+  "policy_version": "1.0",
+  "scoring_rules": {
+    "min_acceptable_score": 50,
+    "max_score": 100
+  },
+  "exclusion_keywords": [
+    "child labor",
+    "cluster munitions",
+    "thermal coal",
+    "arctic drilling",
+    "corruption scandal"
+  ],
+  "positive_themes": {
+    "environment": [
+      "carbon neutrality",
+      "renewable energy",
+      "water recycling",
+      "biodiversity protection"
+    ],
+    "social": [
+      "gender equality",
+      "community investment",
+      "safety training",
+      "human rights"
+    ],
+    "governance": [
+      "board diversity",
+      "executive compensation",
+      "anti-bribery",
+      "transparency"
+    ]
+  },
+  "industry_weights": {
+    "Technology": 1.0,
+    "Energy": 0.8,
+    "Utilities": 0.9,
+    "Finance": 1.0
+  }
+}
