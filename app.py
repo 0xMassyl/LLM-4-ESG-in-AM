@@ -31,31 +31,35 @@ API_URL = "http://127.0.0.1:8000"
 # --- HEADER ---
 col1, col2 = st.columns([1, 15])
 with col2:
-    st.markdown("# ⚡ LLM-4-ESG <span style='font-size:18px; color:#2962ff'>PRO</span>", unsafe_allow_html=True)
-    st.markdown("### ESG-DRIVEN HIERARCHICAL RISK PARITY ENGINE")
+    st.markdown(
+        "# LLM-4-ESG <span style='font-size:18px; color:#2962ff'>PRO</span>",
+        unsafe_allow_html=True
+    )
+    st.markdown("### ESG-Driven Hierarchical Risk Parity Engine")
+
 st.markdown("---")
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.header("⚙️ STRATEGY SETTINGS")
+    st.header("Strategy Settings")
     
-    st.markdown("### 1. UNIVERSE")
+    st.markdown("### 1. Universe")
     default_tickers = "AAPL, MSFT, GOOGL, AMZN, TSLA, XOM, CVX, PEP, KO, JNJ, NVDA"
-    tickers_input = st.text_area("Assets (Comma separated)", value=default_tickers, height=120)
+    tickers_input = st.text_area("Assets (comma separated)", value=default_tickers, height=120)
     
-    st.markdown("### 2. ESG FILTERS (AI)")
-    apply_esg = st.checkbox("Active ESG Screening", value=True)
-    esg_threshold = st.slider("Min. ESG Score", 0, 100, 50, help="Exclude assets below this AI-generated score.")
+    st.markdown("### 2. ESG Filters (AI)")
+    apply_esg = st.checkbox("Enable ESG Screening", value=True)
+    esg_threshold = st.slider("Minimum ESG Score", 0, 100, 50)
     
-    st.markdown("### 3. TIMEFRAME")
+    st.markdown("### 3. Timeframe")
     col_d1, col_d2 = st.columns(2)
     with col_d1:
-        start_date = st.date_input("Start", value=pd.to_datetime("2021-01-01"))
+        start_date = st.date_input("Start Date", value=pd.to_datetime("2021-01-01"))
     with col_d2:
-        end_date = st.date_input("End", value=pd.to_datetime("2024-01-01"))
+        end_date = st.date_input("End Date", value=pd.to_datetime("2024-01-01"))
         
     st.markdown("---")
-    launch_btn = st.button("RUN OPTIMIZATION", type="primary", use_container_width=True)
+    launch_btn = st.button("Run Optimization", type="primary", use_container_width=True)
 
 # --- MAIN EXECUTION ---
 if launch_btn:
@@ -70,84 +74,112 @@ if launch_btn:
     }
 
     try:
-        with st.spinner("🤖 Running AI Analysis & HRP Optimization..."):
+        with st.spinner("Running ESG analysis and HRP optimization..."):
             response = requests.post(f"{API_URL}/optimize", json=payload, timeout=60)
-        
+
         if response.status_code == 200:
             data = response.json()
-            status = data.get("status", "success") # Récupère le statut
+
+            status = data.get("status", "success")
             weights = data["weights"]
             filtered_out = data["filtered_out"]
             esg_scores = data["esg_scores"]
-            
-            # Affichage du statut d'opération (Feedback visuel amélioré)
-            if "simulated" in status or "error" in status:
-                st.warning(f"⚠️ MODE DÉMO ACTIVÉ : {status.replace('simulated: ', '').replace('error: ', '')}. Le calcul HRP utilise des données simulées pour la continuité de service.")
-            else:
-                st.success("✅ DONNÉES RÉELLES : Optimisation HRP lancée sur l'univers filtré.")
 
-            # Données Backtest
+            # Status message
+            if "simulated" in status or "error" in status:
+                st.warning(f"Simulation mode enabled: {status.replace('simulated: ', '').replace('error: ', '')}.")
+            else:
+                st.success("Real data processed successfully.")
+
+            # Performance and metrics
             perf_values = data.get("performance_values", {})
             perf_dates = data.get("performance_dates", [])
             m_hrp = data.get("metrics_hrp", {})
             m_bench = data.get("metrics_bench", {})
 
             # ---------------------------------------------------------
-            # SECTION 1: HISTORICAL PERFORMANCE (BACKTEST)
+            # SECTION 1: Backtest Performance
             # ---------------------------------------------------------
             if perf_values and perf_dates:
-                st.markdown("### 📈 Historical Performance (Backtest)")
-                
-                # KPI Cards
-                k1, k2, k3, k4 = st.columns(4)
-                
-                with k1: 
-                    st.metric("Total Return", m_hrp.get("Total Return", "N/A"), delta=f"vs {m_bench.get('Total Return', 'N/A')}")
-                with k2: 
-                    st.metric("Sharpe Ratio", m_hrp.get("Sharpe Ratio", "N/A"), delta=f"vs {m_bench.get('Sharpe Ratio', 'N/A')}")
-                with k3: 
-                    st.metric("Annual Volatility", m_hrp.get("Annual Volatility", "N/A"), 
-                              delta=f"vs {m_bench.get('Annual Volatility', 'N/A')}", delta_color="inverse")
-                with k4: 
-                    st.metric("Max Drawdown", m_hrp.get("Max Drawdown", "N/A"), 
-                              delta=f"vs {m_bench.get('Max Drawdown', 'N/A')}", delta_color="inverse")
+                st.markdown("### Historical Performance (Backtest)")
 
-                # Graphique de Performance
+                k1, k2, k3, k4 = st.columns(4)
+
+                with k1:
+                    st.metric(
+                        "Total Return",
+                        m_hrp.get("Total Return", "N/A"),
+                        delta=f"vs {m_bench.get('Total Return', 'N/A')}"
+                    )
+                with k2:
+                    st.metric(
+                        "Sharpe Ratio",
+                        m_hrp.get("Sharpe Ratio", "N/A"),
+                        delta=f"vs {m_bench.get('Sharpe Ratio', 'N/A')}"
+                    )
+                with k3:
+                    st.metric(
+                        "Annual Volatility",
+                        m_hrp.get("Annual Volatility", "N/A"),
+                        delta=f"vs {m_bench.get('Annual Volatility', 'N/A')}",
+                        delta_color="inverse"
+                    )
+                with k4:
+                    st.metric(
+                        "Max Drawdown",
+                        m_hrp.get("Max Drawdown", "N/A"),
+                        delta=f"vs {m_bench.get('Max Drawdown', 'N/A')}",
+                        delta_color="inverse"
+                    )
+
                 df_perf = pd.DataFrame(perf_values)
-                df_perf['Date'] = pd.to_datetime(perf_dates)
-                df_perf = df_perf.set_index('Date')
-                
-                fig_perf = px.line(df_perf, x=df_perf.index, y=df_perf.columns, 
-                                   color_discrete_map={"Veritas HRP": "#2962ff", "Benchmark (1/N)": "#787b86"})
-                
+                df_perf["Date"] = pd.to_datetime(perf_dates)
+                df_perf = df_perf.set_index("Date")
+
+                fig_perf = px.line(
+                    df_perf,
+                    x=df_perf.index,
+                    y=df_perf.columns,
+                    color_discrete_map={
+                        "Veritas HRP": "#2962ff",
+                        "Benchmark (1/N)": "#787b86"
+                    }
+                )
+
                 fig_perf.update_layout(
-                    paper_bgcolor="rgba(0,0,0,0)", 
+                    paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
                     font=dict(color="#d1d4dc"),
-                    xaxis_title="", 
+                    xaxis_title="",
                     yaxis_title="Cumulative Return (Base 100)",
                     legend=dict(orientation="h", y=1.1, title=""),
                     hovermode="x unified",
                     height=350
                 )
+
                 st.plotly_chart(fig_perf, use_container_width=True)
                 st.markdown("---")
 
             # ---------------------------------------------------------
-            # SECTION 2: ALLOCATION & ESG AUDIT
+            # SECTION 2: Allocation and ESG Audit
             # ---------------------------------------------------------
             col_chart, col_data = st.columns([1, 1])
 
             with col_chart:
-                st.markdown("### 📊 HRP Allocation Weights")
+                st.markdown("### HRP Allocation Weights")
                 if weights:
                     df_w = pd.DataFrame(list(weights.items()), columns=["Asset", "Weight"])
                     
-                    fig_p = px.pie(df_w, values="Weight", names="Asset", hole=0.6, 
-                                   color_discrete_sequence=px.colors.qualitative.Bold)
-                    
+                    fig_p = px.pie(
+                        df_w,
+                        values="Weight",
+                        names="Asset",
+                        hole=0.6,
+                        color_discrete_sequence=px.colors.qualitative.Bold
+                    )
+
                     fig_p.update_layout(
-                        paper_bgcolor="rgba(0,0,0,0)", 
+                        paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
                         font=dict(color="#d1d4dc"),
                         showlegend=True,
@@ -155,44 +187,48 @@ if launch_btn:
                         margin=dict(t=20, b=20, l=20, r=20),
                         height=350
                     )
+
                     st.plotly_chart(fig_p, use_container_width=True)
                 else:
-                    st.error("No assets survived the ESG filter.")
+                    st.error("No assets passed the ESG filter.")
 
             with col_data:
-                st.markdown("### 📋 ESG Governance (AI Scoring)")
+                st.markdown("### ESG Governance (AI Scores)")
                 if esg_scores:
                     audit_data = []
                     for t, s in esg_scores.items():
-                        status = "✅ PASS" if s >= esg_threshold else "❌ REJECT"
-                        audit_data.append({"Ticker": t, "Score": s, "Status": status})
+                        status_flag = "PASS" if s >= esg_threshold else "REJECT"
+                        audit_data.append({"Ticker": t, "Score": s, "Status": status_flag})
                     
                     df_s = pd.DataFrame(audit_data).sort_values("Score", ascending=False)
-                    
+
                     st.dataframe(
-                        df_s, 
-                        hide_index=True, 
-                        use_container_width=True, 
+                        df_s,
+                        hide_index=True,
+                        use_container_width=True,
                         height=350,
                         column_config={
                             "Score": st.column_config.ProgressColumn(
-                                "AI Score", min_value=0, max_value=100, format="%d"
+                                "AI Score",
+                                min_value=0,
+                                max_value=100,
+                                format="%d"
                             )
                         }
                     )
 
             # ---------------------------------------------------------
-            # SECTION 3: LOGS
+            # SECTION 3: Logs
             # ---------------------------------------------------------
             if filtered_out:
-                with st.expander("🔻 Rejected Assets Log (AI Decision)", expanded=True):
-                    st.warning(f"The following assets were excluded due to low ESG scores (<{esg_threshold}):")
+                with st.expander("Rejected Assets Log", expanded=True):
+                    st.warning(f"Assets excluded for ESG score below {esg_threshold}:")
                     st.code(", ".join(filtered_out), language="text")
 
         else:
-            st.error(f"❌ Server Error: {response.text}")
+            st.error(f"Server error: {response.text}")
 
     except requests.exceptions.ConnectionError:
-        st.error("🔌 Connection Failed. Is the FastAPI backend running on port 8000?")
+        st.error("Connection failed. Is the FastAPI backend running?")
     except Exception as e:
-        st.error(f"⚠️ An unexpected error occurred: {e}")
+        st.error(f"Unexpected error: {e}")

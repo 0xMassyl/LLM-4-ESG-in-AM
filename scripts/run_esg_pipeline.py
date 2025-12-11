@@ -53,7 +53,7 @@ def main():
         # Saves ESG score and qualitative insights for downstream evaluation.
         save_score(ticker, score, rationale, source="Auto-Search Web")
 
-    print("\nMission complete. ESG database updated.")
+    print("\n Mission complete. ESG database updated.")
 
 if __name__ == "__main__":
     main()

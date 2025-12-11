@@ -9,8 +9,8 @@ settings = get_settings()
 # -------------------------------------------------------------------------
 # 1. Database Connection Setup
 # -------------------------------------------------------------------------
-# Builds PostgreSQL connection string dynamically from environment variables.
-# This ensures the module functions both locally and within Docker.
+# Builds a PostgreSQL connection string using environment variables.
+# Allows seamless use both locally and inside Docker.
 DATABASE_URL = (
     f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}"
     f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
@@ -21,7 +21,7 @@ try:
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     Base = declarative_base()
 except Exception as e:
-    # Allows the application to import modules even if the DB is unavailable.
+    # Ensures module import still works even when DB is offline.
     print(f"[DB] Connection initialization failed: {e}")
     Base = declarative_base()
     SessionLocal = None
@@ -32,12 +32,12 @@ except Exception as e:
 # -------------------------------------------------------------------------
 class ESGScore(Base):
     """
-    Table storing ESG analysis outputs produced by the LLM analyzer.
-    Each entry records:
-    - the ticker analyzed,
-    - the assigned ESG score (0–100),
-    - a short explanatory rationale,
-    - optional metadata regarding the analysis source and model used.
+    SQLAlchemy model for storing ESG analysis results.
+    Tracks:
+    - the analyzed ticker,
+    - the generated ESG score (0–100),
+    - the model rationale,
+    - optional metadata such as source URL and model name.
     """
     __tablename__ = "esg_scores"
 
@@ -57,8 +57,8 @@ class ESGScore(Base):
 # -------------------------------------------------------------------------
 def init_db():
     """
-    Initializes database tables when running the project.
-    Called once at startup to ensure schema availability.
+    Creates all database tables.
+    Called at application startup to guarantee schema availability.
     """
     if engine:
         try:
@@ -71,7 +71,7 @@ def init_db():
 def save_score(ticker: str, score: float, rationale: str, source: str = "manual"):
     """
     Inserts a new ESG score entry into the database.
-    Uses a transaction to guarantee atomicity and safe rollback on errors.
+    Uses a transaction to ensure atomic writes and rollback on failure.
     """
     if not SessionLocal:
         print("[DB] No session available. Entry skipped.")
@@ -97,8 +97,7 @@ def save_score(ticker: str, score: float, rationale: str, source: str = "manual"
 
 def get_latest_scores() -> Dict[str, float]:
     """
-    Loads the most recent ESG score per ticker.
-    Returns a dictionary: {ticker: score}.
+    Returns the latest ESG scores per ticker as a dictionary: {ticker: score}.
     Used by the FastAPI optimizer to filter the investment universe.
     """
     if not SessionLocal:
@@ -108,11 +107,14 @@ def get_latest_scores() -> Dict[str, float]:
     try:
         rows = session.query(ESGScore).all()
 
-        # Converts ORM values into native Python types to ensure consistency.
+        # Converts ORM fields to native Python types for consistency.
+        if not rows:
+            return {}
+
         return {
             str(cast(Any, row.ticker)): float(cast(Any, row.score))
             for row in rows
-        } if rows else {}
+        }
 
     except Exception as e:
         print(f"[DB] Read error: {e}")

@@ -12,30 +12,30 @@ class ESGAnalyzer:
     - Uses OpenAI (GPT models) when an API key is available.
     - Falls back to local inference (Ollama with Llama 3) when no key is provided.
     
-    The design ensures the application remains functional even without cloud access.
+    This design keeps the application functional even without cloud access.
     """
 
     def __init__(self):
         self.api_key = settings.OPENAI_API_KEY
         
-        # Dynamically selects cloud or local inference depending on the API key.
+        # Selects cloud or local inference depending on the API key.
         if self.api_key and self.api_key.startswith("sk-"):
             print("[AI] Mode: OpenAI Cloud (GPT)")
             self.client = OpenAI(api_key=self.api_key)
             self.model = "gpt-3.5-turbo"
         else:
             print("[AI] Mode: Local Inference (Ollama/Llama3)")
-            # Points to a local Ollama server emulating the OpenAI API interface.
+            # Connects to a local Ollama server that mimics the OpenAI API interface.
             self.client = OpenAI(
                 base_url="http://localhost:11434/v1",
-                api_key="ollama"  # Dummy key required by the client library.
+                api_key="ollama"  # A dummy key is still required by the client.
             )
             self.model = "llama3"
 
     def analyze_document(self, ticker: str, text_content: str) -> Dict[str, Any]:
         """
         Sends ESG-related text to the selected LLM (cloud or local).
-        Automatically falls back to a mock analysis when data is insufficient.
+        Falls back to a mock analysis when text is insufficient or when inference fails.
         """
         if len(text_content) < 200 or "Error" in text_content[:20]:
             print(f"[AI] Insufficient text for {ticker}. Switching to mock analysis.")
@@ -44,7 +44,7 @@ class ESGAnalyzer:
         try:
             print(f"[AI] Analyzing {ticker} with model '{self.model}'")
             
-            # Strict JSON output request to simplify downstream parsing.
+            # Request a strict JSON output for easier parsing downstream.
             prompt = f"""
             Role: Expert ESG Analyst.
             Task: Analyze the following text from {ticker}'s sustainability report.
@@ -63,7 +63,7 @@ class ESGAnalyzer:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
-                temperature=0.1,  # Low temperature for deterministic outputs.
+                temperature=0.1,  # Low temperature to ensure deterministic behavior.
             )
             
             content = response.choices[0].message.content
@@ -72,7 +72,7 @@ class ESGAnalyzer:
 
             clean_content = content.strip()
 
-            # Removes surrounding formatting occasionally added by local models.
+            # Removes surrounding code fences that local models may add.
             if "```json" in clean_content:
                 clean_content = clean_content.split("```json")[1].split("```")[0]
             elif "```" in clean_content:
@@ -88,17 +88,20 @@ class ESGAnalyzer:
             }
 
         except APIConnectionError:
+            # Handles the case where the local server is not reachable.
             print("[AI] Connection to local Ollama server failed.")
-            print("Ensure that 'ollama run llama3' is running in a terminal.")
+            print("Ensure that 'ollama run llama3' is running.")
             return self._mock_analysis(ticker)
 
         except Exception as e:
+            # Catches unexpected model errors or malformed outputs.
             print(f"[AI] Error from model '{self.model}': {e}")
             return self._mock_analysis(ticker)
 
     def _mock_analysis(self, ticker: str) -> Dict[str, Any]:
         """
-        Backup mode used when inference fails. Ensures the pipeline remains operational.
+        Backup mode used when inference fails or when text is insufficient.
+        Guarantees the ESG pipeline continues producing a result.
         """
         return {
             "ticker": ticker,

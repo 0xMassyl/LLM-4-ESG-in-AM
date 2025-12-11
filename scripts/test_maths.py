@@ -3,35 +3,35 @@ import numpy as np
 from src.engine.hrp_optimizer import HRPOptimizer
 
 def test_hrp():
-    print("--- 🧮 TEST UNITAIRE DU MOTEUR HRP ---")
+    print("--- HRP ENGINE UNIT TEST ---")
     
-    # 1. Génération de données synthétiques corrélées
-    # Actif A et B très corrélés, C décorrélé et volatil
+    # 1. Generate synthetic correlated data
+    # Assets A and B are highly correlated; C is uncorrelated and more volatile.
     np.random.seed(42)
     n = 1000
     
     a = np.random.normal(0, 0.01, n)
-    b = a + np.random.normal(0, 0.002, n) # B suit A de très près
-    c = np.random.normal(0, 0.02, n)      # C est indépendant et plus risqué
+    b = a + np.random.normal(0, 0.002, n)  # B mimics A very closely
+    c = np.random.normal(0, 0.02, n)       # C is independent and higher risk
     
     returns = pd.DataFrame({'A': a, 'B': b, 'C': c})
     
-    print("Corrélation des actifs (A et B doivent être proches de 1) :")
+    print("Asset correlation matrix (A and B should be close to 1):")
     print(returns.corr().round(2))
     
-    # 2. Lancement de l'optimiseur
+    # 2. Run the HRP optimizer on the synthetic data
     optimizer = HRPOptimizer(returns)
     weights = optimizer.optimize()
     
-    print("\n--- 🏆 RÉSULTAT HRP (Poids) ---")
+    print("\n--- HRP RESULT (Weights) ---")
     print(weights.apply(lambda x: f"{x:.2%}"))
     
-    # 3. Vérification Logique
-    # HRP devrait traiter (A+B) comme un cluster et C comme un autre.
-    # C est très volatil, donc il devrait avoir moins de poids que le cluster (A+B).
-    # Mais dans le cluster (A+B), A et B devraient se partager le risque.
+    # 3. Sanity check
+    # HRP should identify (A+B) as one cluster and C as another.
+    # Because C is more volatile, it should receive a lower allocation.
+    # Within the A/B cluster, risk is redistributed between both assets.
     
-    print("\n✅ Si les poids sont différents de 33.33%, le moteur marche.")
+    print("\nIf the weights differ from an equal 33.33% split, the engine behaves correctly.")
 
 if __name__ == "__main__":
-    test_hrp() # Correction ici : appel de la bonne fonction
+    test_hrp()  # Correct function call

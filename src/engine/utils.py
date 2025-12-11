@@ -3,34 +3,41 @@ import numpy as np
 
 def calculate_log_returns(prices: pd.DataFrame) -> pd.DataFrame:
     """
-    Calcule les rendements logarithmiques de manière robuste.
-    Ne supprime pas les lignes s'il manque juste une donnée.
+    Computes robust log-returns without aggressively dropping rows.
+    Missing values are forward-filled to avoid breaking the return series.
     """
-    # 1. Tri par date pour être sûr
+    # 1. Ensure chronological ordering
     prices = prices.sort_index()
-    
-    # 2. Remplissage des trous (Forward Fill)
-    # Si le prix de mardi manque, on prend celui de lundi.
+
+    # 2. Forward-fill missing values to preserve continuity
     prices_filled = prices.ffill()
-    
-    # 3. Calcul des rendements : ln(P_t / P_{t-1})
+
+    # 3. Compute raw ratio P_t / P_(t-1)
     raw_returns = prices_filled / prices_filled.shift(1)
-    
-    # 4. Nettoyage des infinis (division par 0)
+
+    # 4. Replace infinities produced by division by zero
     raw_returns = raw_returns.replace([np.inf, -np.inf], np.nan)
-    
-    # 5. Logarithme
+
+    # 5. Convert ratios into log-returns: ln(P_t / P_(t-1))
     log_returns_df = pd.DataFrame(np.log(raw_returns))
-    
-    # 6. Remplacement des NaN restants par 0.0 (Pas de rendement ce jour-là)
-    # C'est la clé pour ne pas avoir une matrice vide !
+
+    # 6. Replace remaining NaN values with 0.0
+    # This prevents the return matrix from collapsing when sparse data is present.
     log_returns_df = log_returns_df.fillna(0.0)
-    
-    # On supprime uniquement la toute première ligne (qui est toujours NaN/0 après le shift)
+
+    # Drop the first row (always NaN/0.0 due to the initial shift)
     return log_returns_df.iloc[1:]
 
+
 def get_covariance_matrix(returns: pd.DataFrame) -> pd.DataFrame:
+    """
+    Computes the annualized covariance matrix using 252 trading days.
+    """
     return returns.cov() * 252
 
+
 def get_correlation_matrix(returns: pd.DataFrame) -> pd.DataFrame:
+    """
+    Computes the correlation matrix of asset returns.
+    """
     return returns.corr()

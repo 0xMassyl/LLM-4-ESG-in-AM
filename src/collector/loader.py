@@ -6,8 +6,8 @@ from datetime import datetime
 class MarketDataLoader:
     """
     Service responsible for fetching historical market data from Yahoo Finance.
-    The loader ensures consistent formatting, safe defaults, and Series/DataFrame
-    normalization for downstream processing.
+    Ensures consistent formatting, safe defaults, and normalized outputs
+    (Series -> DataFrame) for downstream processing.
     """
 
     def __init__(
@@ -16,10 +16,10 @@ class MarketDataLoader:
         start_date: Optional[str] = None,
         end_date: Optional[str] = None
     ):
-        # Standardizes ticker formatting (uppercase and trimmed).
+        # Standardizes tickers (uppercased and stripped).
         self.tickers = [t.strip().upper() for t in tickers]
 
-        # Applies default date range if not provided.
+        # Applies default dates when none are provided.
         self.start_date = start_date or "2023-01-01"
         self.end_date = end_date or datetime.now().strftime("%Y-%m-%d")
 
@@ -28,7 +28,7 @@ class MarketDataLoader:
     def fetch_data(self) -> pd.DataFrame:
         """
         Downloads adjusted historical prices and returns a cleaned DataFrame.
-        Handles both single-ticker (Series) and multi-ticker (DataFrame) outputs.
+        Handles both Series (single ticker) and DataFrame (multiple tickers).
         """
         if not self.tickers:
             raise ValueError("Ticker list is empty.")
@@ -36,7 +36,7 @@ class MarketDataLoader:
         print(f"[Loader] Downloading data from {self.start_date} to {self.end_date} for: {self.tickers}...")
 
         try:
-            # Retrieves historical data with adjustments applied.
+            # Fetches historical data, automatically adjusted for splits and dividends.
             data = yf.download(
                 self.tickers,
                 start=self.start_date,
@@ -49,7 +49,7 @@ class MarketDataLoader:
                 print("[Loader] No data returned by Yahoo Finance.")
                 return pd.DataFrame()
 
-            # Selects the closing price column when available.
+            # Extracts the closing price layer. Falls back to adjusted close if needed.
             if "Close" in data:
                 prices_temp = data["Close"]
             elif "Adj Close" in data:
@@ -57,13 +57,13 @@ class MarketDataLoader:
             else:
                 prices_temp = data
 
-            # Normalizes Series output to DataFrame for consistent downstream behavior.
+            # Converts Series to DataFrame for consistent structure.
             if isinstance(prices_temp, pd.Series):
                 prices = prices_temp.to_frame()
             else:
                 prices = cast(pd.DataFrame, prices_temp)
 
-            # Removes rows with no valid price data.
+            # Removes rows where all tickers have missing values.
             self.raw_prices = prices.dropna(how="all")
 
             if self.raw_prices.empty:
@@ -73,5 +73,6 @@ class MarketDataLoader:
             return self.raw_prices
 
         except Exception as e:
+            # Catches API, connectivity, or formatting errors.
             print(f"[Loader] Critical failure: {e}")
             return pd.DataFrame()

@@ -5,114 +5,122 @@ from scipy.spatial.distance import squareform
 
 class HRPOptimizer:
     """
-    Hierarchical Risk Parity (HRP) Implementation.
-    Source: Lopez de Prado, M. (2016). Building Diversified Portfolios.
+    Hierarchical Risk Parity (HRP) implementation.
+    Based on Lopez de Prado (2016), "Building Diversified Portfolios".
+
+    Steps:
+    1. Compute distance matrix from correlations
+    2. Perform hierarchical clustering
+    3. Quasi-diagonalize the covariance matrix
+    4. Allocate capital recursively using cluster variances
     """
 
     def __init__(self, returns: pd.DataFrame):
         self.returns = returns
         self.tickers = returns.columns.tolist()
-        # Calcul de la matrice de covariance et corrélation
+
+        # Precompute covariance and correlation matrices
         self.cov = returns.cov()
         self.corr = returns.corr()
 
     def optimize(self) -> pd.Series:
         """
-        Exécute l'optimisation HRP complète.
+        Executes the full HRP optimization pipeline.
+        Returns normalized weights (sum = 1).
         """
-        # 1. Clustering (Tree Structure)
-        # On calcule la distance : d = sqrt(0.5 * (1 - rho))
+        # 1. Distance matrix used for clustering
         dist = np.sqrt(0.5 * (1 - self.corr))
         dist_condensed = squareform(dist, checks=False)
-        linkage = sch.linkage(dist_condensed, 'single')
+        linkage = sch.linkage(dist_condensed, method="single")
 
-        # 2. Quasi-Diagonalisation (Tri des actifs)
+        # 2. Quasi-diagonal ordering of assets
         sort_ix = self._get_quasi_diag(linkage)
-        sort_ix = self.corr.index[sort_ix].tolist() # Récupère les noms des tickers triés
+        sort_ix = self.corr.index[sort_ix].tolist()
 
-        # 3. Réorganisation de la covariance selon le cluster
+        # 3. Reorder covariance according to clustering structure
         df_cov = self.cov.loc[sort_ix, sort_ix]
 
-        # 4. Recursive Bisection (Allocation)
-        # On initialise les poids à 1.0
+        # 4. Recursive bisection (top-down allocation)
         weights = pd.Series(1.0, index=sort_ix)
         weights = self._get_rec_bisection(weights, df_cov, sort_ix)
 
-        # Vérification finale : Somme = 1.0
         return weights.sort_index()
 
     def _get_quasi_diag(self, linkage: np.ndarray) -> list:
         """
-        Trie les éléments du cluster pour que les actifs similaires soient adjacents.
+        Rearranges the hierarchical tree so similar assets appear adjacent.
+        Produces the ordering used for recursive bisection.
         """
         linkage = linkage.astype(int)
         sort_ix = pd.Series([linkage[-1, 0], linkage[-1, 1]])
-        num_items = linkage[-1, 3] # Nombre total d'éléments originaux
+        num_items = linkage[-1, 3]
 
         while sort_ix.max() >= num_items:
-            # Replace clusters with their children
-            # FIX: Conversion explicite en pd.Index pour satisfaire Pylance
-            sort_ix.index = pd.Index(range(0, sort_ix.shape[0] * 2, 2)) # Make space
-            df0 = sort_ix[sort_ix >= num_items] # Clusters
-            i = df0.index
-            j = df0.values - num_items
-            sort_ix[i] = linkage[j, 0] # Left child
-            df0 = pd.Series(linkage[j, 1], index=i + 1) # Right child
-            sort_ix = pd.concat([sort_ix, df0]).sort_index() # Re-merge
-            # FIX: Conversion explicite en pd.Index
-            sort_ix.index = pd.Index(range(len(sort_ix))) # Re-index
+            # Expand index to insert children in correct order
+            sort_ix.index = pd.Index(range(0, sort_ix.shape[0] * 2, 2))
+
+            # Identify cluster nodes (values >= num_items)
+            clusters = sort_ix[sort_ix >= num_items]
+            idx = clusters.index
+            loc = clusters.values - num_items
+
+            # Replace cluster node with its left child
+            sort_ix[idx] = linkage[loc, 0]
+
+            # Add right child
+            new_right = pd.Series(linkage[loc, 1], index=idx + 1)
+            sort_ix = pd.concat([sort_ix, new_right]).sort_index()
+
+            # Ensure continuous indexing
+            sort_ix.index = pd.Index(range(len(sort_ix)))
 
         return sort_ix.tolist()
 
     def _get_cluster_var(self, cov: pd.DataFrame, c_items: list) -> float:
         """
-        Calcule la variance d'un cluster en utilisant l'Inverse Variance Portfolio (IVP).
+        Computes the variance of a cluster using the Inverse Variance Portfolio (IVP).
+        Formula: w = 1/diag(Cov), normalized; var = w' * Cov * w
         """
         cov_slice = cov.loc[c_items, c_items]
-        # Poids IVP intra-cluster = 1 / diag(cov)
         inv_diag = 1 / np.diag(cov_slice)
         weights = inv_diag / np.sum(inv_diag)
-        
-        # Variance du cluster = w' * Cov * w
-        return np.dot(np.dot(weights, cov_slice), weights)
+        return float(np.dot(weights, np.dot(cov_slice, weights)))
 
     def _get_rec_bisection(self, weights: pd.Series, cov: pd.DataFrame, sort_ix: list) -> pd.Series:
         """
-        Allocation récursive du capital (Top-Down).
+        Recursively allocates capital between clusters.
+        Higher-variance clusters receive lower allocations.
         """
         w = weights.copy()
-        c_items = [sort_ix] # Liste de listes (clusters)
+        clusters = [sort_ix]
 
-        while len(c_items) > 0:
-            # On découpe les clusters en 2 tant qu'ils contiennent plus d'1 actif
-            c_items = [i for i in c_items if len(i) >= 2]
-            
-            for i in range(0, len(c_items), 2):
-                c_items0 = c_items[i] # Cluster complet
-                
-                # Coupe en deux
-                half = len(c_items0) // 2
-                c_items1 = c_items0[:half] # Gauche
-                c_items2 = c_items0[half:] # Droite
-                
-                # Calcul des variances des sous-clusters
-                var1 = self._get_cluster_var(cov, c_items1)
-                var2 = self._get_cluster_var(cov, c_items2)
-                
-                # Facteur d'allocation (Alpha)
-                alpha = 1 - var1 / (var1 + var2)
-                
-                # Application des poids
-                w[c_items1] *= alpha
-                w[c_items2] *= 1 - alpha
-                
-            # Préparation niveau suivant
-            new_c_items = []
-            for item in c_items:
-                half = len(item) // 2
-                if len(item) > 1:
-                    new_c_items.append(item[:half])
-                    new_c_items.append(item[half:])
-            c_items = new_c_items
-            
+        while len(clusters) > 0:
+            # Only continue splitting clusters with 2+ items
+            clusters = [c for c in clusters if len(c) >= 2]
+
+            for c in clusters:
+                half = len(c) // 2
+                left = c[:half]
+                right = c[half:]
+
+                # Compute cluster variances
+                var_left = self._get_cluster_var(cov, left)
+                var_right = self._get_cluster_var(cov, right)
+
+                # Allocation factor (alpha)
+                alpha = 1 - var_left / (var_left + var_right)
+
+                # Apply weights
+                w[left] *= alpha
+                w[right] *= (1 - alpha)
+
+            # Prepare next recursion level
+            new_level = []
+            for c in clusters:
+                half = len(c) // 2
+                if len(c) > 1:
+                    new_level.append(c[:half])
+                    new_level.append(c[half:])
+            clusters = new_level
+
         return w
