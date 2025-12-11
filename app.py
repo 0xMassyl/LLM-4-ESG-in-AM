@@ -12,41 +12,16 @@ st.set_page_config(
     page_icon="📈"
 )
 
-# --- CSS TRADINGVIEW STYLE ---
+# --- CSS STYLE ---
 st.markdown("""
     <style>
-        /* Main Background */
         .stApp { background-color: #131722; }
-        
-        /* Sidebar */
         [data-testid="stSidebar"] { background-color: #1e222d; border-right: 1px solid #2a2e39; }
-        
-        /* Typography */
         h1, h2, h3, p, label, div, span { color: #d1d4dc !important; font-family: 'Roboto', sans-serif; }
-        
-        /* Inputs */
-        .stTextInput input, .stSelectbox div, .stNumberInput input, .stTextArea textarea { 
-            color: #d1d4dc !important; 
-            background-color: #2a2e39 !important; 
-            border: 1px solid #434651 !important; 
-        }
-        
-        /* Buttons */
-        .stButton > button { 
-            background-color: #2962ff !important; 
-            color: white !important; 
-            border: none; 
-            border-radius: 4px; 
-            font-weight: 600; 
-            transition: all 0.2s;
-        }
-        .stButton > button:hover { box-shadow: 0 4px 14px 0 rgba(41, 98, 255, 0.39); }
-        
-        /* Dataframes & Metrics */
+        .stTextInput input, .stSelectbox div, .stNumberInput input { color: #d1d4dc !important; background-color: #2a2e39 !important; border: 1px solid #434651 !important; }
+        .stButton > button { background-color: #2962ff !important; color: white !important; border: none; font-weight: 600; }
         [data-testid="stDataFrame"] { background-color: #1e222d; border: 1px solid #2a2e39; }
         [data-testid="stMetricValue"] { font-size: 26px; color: #d1d4dc !important; }
-        
-        /* Plotly Background fix */
         .js-plotly-plot .plotly .main-svg { background: rgba(0,0,0,0) !important; }
     </style>
 """, unsafe_allow_html=True)
@@ -56,7 +31,7 @@ API_URL = "http://127.0.0.1:8000"
 # --- HEADER ---
 col1, col2 = st.columns([1, 15])
 with col2:
-    st.markdown("# ⚡ VERITAS QUANT <span style='font-size:18px; color:#2962ff'>PRO</span>", unsafe_allow_html=True)
+    st.markdown("# ⚡ LLM-4-ESG <span style='font-size:18px; color:#2962ff'>PRO</span>", unsafe_allow_html=True)
     st.markdown("### ESG-DRIVEN HIERARCHICAL RISK PARITY ENGINE")
 st.markdown("---")
 
@@ -100,10 +75,17 @@ if launch_btn:
         
         if response.status_code == 200:
             data = response.json()
+            status = data.get("status", "success") # Récupère le statut
             weights = data["weights"]
             filtered_out = data["filtered_out"]
             esg_scores = data["esg_scores"]
             
+            # Affichage du statut d'opération (Feedback visuel amélioré)
+            if "simulated" in status or "error" in status:
+                st.warning(f"⚠️ MODE DÉMO ACTIVÉ : {status.replace('simulated: ', '').replace('error: ', '')}. Le calcul HRP utilise des données simulées pour la continuité de service.")
+            else:
+                st.success("✅ DONNÉES RÉELLES : Optimisation HRP lancée sur l'univers filtré.")
+
             # Données Backtest
             perf_values = data.get("performance_values", {})
             perf_dates = data.get("performance_dates", [])
@@ -119,7 +101,6 @@ if launch_btn:
                 # KPI Cards
                 k1, k2, k3, k4 = st.columns(4)
                 
-                # Helper pour colorer le delta (Vert si positif, Rouge si négatif)
                 with k1: 
                     st.metric("Total Return", m_hrp.get("Total Return", "N/A"), delta=f"vs {m_bench.get('Total Return', 'N/A')}")
                 with k2: 
@@ -181,7 +162,6 @@ if launch_btn:
             with col_data:
                 st.markdown("### 📋 ESG Governance (AI Scoring)")
                 if esg_scores:
-                    # Préparation des données pour le tableau
                     audit_data = []
                     for t, s in esg_scores.items():
                         status = "✅ PASS" if s >= esg_threshold else "❌ REJECT"
@@ -208,10 +188,6 @@ if launch_btn:
                 with st.expander("🔻 Rejected Assets Log (AI Decision)", expanded=True):
                     st.warning(f"The following assets were excluded due to low ESG scores (<{esg_threshold}):")
                     st.code(", ".join(filtered_out), language="text")
-            
-            # Affichage discret du mode Démo si activé
-            if "simulated" in data.get("status", ""):
-                 st.caption("ℹ️ Mode Démo activé (Données simulées pour la continuité de service)")
 
         else:
             st.error(f"❌ Server Error: {response.text}")

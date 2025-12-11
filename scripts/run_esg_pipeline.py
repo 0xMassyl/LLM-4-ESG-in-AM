@@ -14,13 +14,9 @@ def main():
     # Target list used by the autonomous mode.
     # The scraper identifies the latest ESG report through a search-based approach.
     tickers_to_scan = [
-        "TSLA",
-        "XOM",
-        "AAPL",
-        "MSFT",
-        "BP",
-        "SHEL",
-        "NVDA"
+        "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "XOM", "CVX", "PEP", "KO", "JNJ", "NVDA",
+        # Ajouts recommandés pour les hauts scores ESG
+        "UNH", "PG", "NSRGY", "ORAN", "VOD"
     ]
     
     print(f" Identified targets: {len(tickers_to_scan)} companies")
