@@ -3,6 +3,15 @@
 *A next-generation autonomous quant engine fusing Generative AI, ESG intelligence, and Hierarchical Risk Parity optimization.*
 
 ---
+<p align="center">
+  <img src="C\\Users\\Massyl\\Desktop\\LLM 4 ESG in AM\\results\\3Y_ROLLING\\14_over_100\\newplot5.png" alt="Dashboard Preview" width="800">
+</p>
+
+<p align="center">
+  <img src="C:\Users\Massyl\Desktop\LLM 4 ESG in AM\results\3Y_ROLLING\14_over_100\newplot4.png" alt="Dashboard Preview" width="800">
+</p>
+---
+
 
 ## **Executive Summary**
 
