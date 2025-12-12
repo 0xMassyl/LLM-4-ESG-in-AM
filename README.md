@@ -4,11 +4,10 @@
 
 ---
 <p align="center">
-  <img src="results/3Y_ROLLING/14_over_100/newplot4.png" width="700">
+  <img src="results/3Y_ROLLING/14_over_100/newplot4.png" width="45%" />
+  <img src="results/3Y_ROLLING/14_over_100/newplot5.png" width="45%" />
 </p>
-<p align="center">
-  <img src="results/3Y_ROLLING/14_over_100/newplot5.png" width="700">
-</p>
+
 ---
 
 
