@@ -38,7 +38,7 @@ It addresses three major challenges in modern asset management:
 
 ## **Interactive Dashboard (UI)**
 
-LLM-4-ESG-in-AM includes a professional TradingView-style **Streamlit interface** for visualization and analysis of ESG scores and HRP weights.
+LLM-4-ESG-in-AM includes a professional  **Streamlit interface** for visualization and analysis of ESG scores and HRP weights.
 
 ### **Key Capabilities**
 - Asset universe configuration  
