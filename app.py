@@ -1,133 +1,252 @@
+# -------------------------------------------------
+# Core Streamlit library
+# Used to build the frontend UI
+# -------------------------------------------------
 import streamlit as st
+
+# -------------------------------------------------
+# Data manipulation
+# Used to format tables and time series
+# -------------------------------------------------
 import pandas as pd
+
+# -------------------------------------------------
+# HTTP client
+# Used to communicate with the FastAPI backend
+# -------------------------------------------------
 import requests
+
+# -------------------------------------------------
+# Plotting library
+# Used for interactive charts
+# -------------------------------------------------
 import plotly.express as px
+
+# -------------------------------------------------
+# JSON utility (explicit import for clarity/debugging)
+# -------------------------------------------------
 import json
 
-# =================================================
-# Page configuration
-# We define global UI parameters for the Streamlit app
-# =================================================
-st.set_page_config(
-    page_title="Veritas Quant | Pro Terminal",
-    layout="wide",                     # Use full screen width
-    initial_sidebar_state="expanded",  # Sidebar opened by default
-    page_icon="📈"                     # Title icon
-)
 
 # =================================================
-# Custom CSS
-# We override Streamlit default style to match
-# a professional look
+# PAGE CONFIGURATION
+# =================================================
+# This defines global UI behavior for the Streamlit app.
+# It must be called once, at the very top of the file.
+# =================================================
+st.set_page_config(
+    page_title="Veritas Quant | Pro Terminal",  # Browser tab title
+    layout="wide",                             # Use full screen width
+    initial_sidebar_state="expanded",          # Sidebar visible by default
+    page_icon="📈"                             # Icon shown in browser tab
+)
+
+
+# =================================================
+# CUSTOM CSS
+# =================================================
+# Streamlit has limited styling options.
+# We inject raw CSS to enforce a professional
+# dark-theme trading terminal look.
 # =================================================
 st.markdown("""
     <style>
+        /* Global background */
         .stApp { background-color: #131722; }
-        [data-testid="stSidebar"] { background-color: #1e222d; border-right: 1px solid #2a2e39; }
-        h1, h2, h3, p, label, div, span { color: #d1d4dc !important; font-family: 'Roboto', sans-serif; }
-        .stTextInput input, .stSelectbox div, .stNumberInput input {
+
+        /* Sidebar styling */
+        [data-testid="stSidebar"] {
+            background-color: #1e222d;
+            border-right: 1px solid #2a2e39;
+        }
+
+        /* Global text styling */
+        h1, h2, h3, p, label, div, span {
+            color: #d1d4dc !important;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* Inputs styling */
+        .stTextInput input,
+        .stSelectbox div,
+        .stNumberInput input {
             color: #d1d4dc !important;
             background-color: #2a2e39 !important;
             border: 1px solid #434651 !important;
         }
+
+        /* Primary buttons */
         .stButton > button {
             background-color: #2962ff !important;
             color: white !important;
             border: none;
             font-weight: 600;
         }
+
+        /* Tables */
         [data-testid="stDataFrame"] {
             background-color: #1e222d;
             border: 1px solid #2a2e39;
         }
+
+        /* KPI metrics */
         [data-testid="stMetricValue"] {
             font-size: 26px;
             color: #d1d4dc !important;
         }
+
+        /* Plotly background */
         .js-plotly-plot .plotly .main-svg {
             background: rgba(0,0,0,0) !important;
         }
     </style>
 """, unsafe_allow_html=True)
 
+
 # =================================================
-# Backend API endpoint
-# This is where optimization logic lives
+# BACKEND API ENDPOINT
+# =================================================
+# This is the only coupling point between
+# the Streamlit frontend and the FastAPI backend.
 # =================================================
 API_URL = "http://127.0.0.1:8000"
 
+
 # =================================================
-# Header
-# Visual branding and context for the user
+# HEADER SECTION
 # =================================================
-col1, col2 = st.columns([1, 15])
+# Top branding area of the application.
+# Gives context before user interaction.
+# =================================================
+col1, col2 = st.columns([1, 15])  # Layout split (icon / text)
+
 with col2:
-    st.markdown("# ⚡ LLM-4-ESG <span style='font-size:18px; color:#2962ff'>PRO</span>", unsafe_allow_html=True)
+    # Main title
+    st.markdown(
+        "# ⚡ LLM-4-ESG <span style='font-size:18px; color:#2962ff'>PRO</span>",
+        unsafe_allow_html=True
+    )
+
+    # Subtitle explaining what the app actually does
     st.markdown("### ESG-DRIVEN HIERARCHICAL RISK PARITY ENGINE")
+
+# Horizontal separator
 st.markdown("---")
 
+
 # =================================================
-# Sidebar – user inputs
-# All strategy parameters are centralized here
+# SIDEBAR – STRATEGY INPUTS
+# =================================================
+# The sidebar acts as the control panel.
+# All user decisions that affect the backend
+# are made here.
 # =================================================
 with st.sidebar:
+
+    # Sidebar title
     st.header("⚙️ STRATEGY SETTINGS")
 
-    # ---- Asset universe ----
-    # User selects which assets are included in the portfolio
+    # ---------------------------------------------
+    # 1. ASSET UNIVERSE
+    # ---------------------------------------------
+    # Defines which assets will be sent to the backend.
+    # ---------------------------------------------
     st.markdown("### 1. UNIVERSE")
-    default_tickers = "AAPL, MSFT, GOOGL, AMZN, TSLA, XOM, CVX, PEP, KO, JNJ, NVDA"
+
+    # Default tickers shown on first load
+    default_tickers = (
+        "AAPL, MSFT, GOOGL, AMZN, TSLA, "
+        "XOM, CVX, PEP, KO, JNJ, NVDA"
+    )
+
+    # Multiline text input allows flexible universe editing
     tickers_input = st.text_area(
         "Assets (Comma separated)",
         value=default_tickers,
         height=120
     )
 
-    # ---- ESG filtering ----
-    # Simple rule-based ESG exclusion using a score threshold
+    # ---------------------------------------------
+    # 2. ESG FILTERING
+    # ---------------------------------------------
+    # Controls ESG exclusion logic in the backend.
+    # ---------------------------------------------
     st.markdown("### 2. ESG FILTERS")
+
+    # Boolean toggle to activate/deactivate ESG filtering
     apply_esg = st.checkbox(
         "Activate ESG screening",
         value=True
     )
+
+    # ESG score threshold
+    # Assets below this value will be excluded
     esg_threshold = st.slider(
         "Minimum ESG score",
         0, 100, 50,
         help="Assets below this score are excluded."
     )
 
-    # ---- Time range ----
-    # Defines historical window for returns and risk estimation
+    # ---------------------------------------------
+    # 3. TIMEFRAME
+    # ---------------------------------------------
+    # Defines historical window used for returns,
+    # risk estimation and backtesting.
+    # ---------------------------------------------
     st.markdown("### 3. TIMEFRAME")
+
     col_d1, col_d2 = st.columns(2)
+
     with col_d1:
-        start_date = st.date_input("Start", value=pd.to_datetime("2021-01-01"))
+        start_date = st.date_input(
+            "Start",
+            value=pd.to_datetime("2021-01-01")
+        )
+
     with col_d2:
-        end_date = st.date_input("End", value=pd.to_datetime("2024-01-01"))
+        end_date = st.date_input(
+            "End",
+            value=pd.to_datetime("2024-01-01")
+        )
 
     st.markdown("---")
 
-    # Launch button triggers the whole pipeline
+    # ---------------------------------------------
+    # RUN BUTTON
+    # ---------------------------------------------
+    # This is the only trigger for backend execution.
+    # No auto-refresh, no hidden calls.
+    # ---------------------------------------------
     launch_btn = st.button(
         "RUN OPTIMIZATION",
         type="primary",
         use_container_width=True
     )
 
+
 # =================================================
-# Main execution logic
-# Everything below runs only after button click
+# MAIN EXECUTION LOGIC
+# =================================================
+# Everything below runs ONLY after user clicks
+# the "RUN OPTIMIZATION" button.
 # =================================================
 if launch_btn:
 
-    # Clean tickers input and normalize format
+    # ---------------------------------------------
+    # Clean and normalize tickers input
+    # ---------------------------------------------
+    # - remove whitespace
+    # - enforce uppercase
+    # - remove empty values
     ticker_list = [
         t.strip().upper()
         for t in tickers_input.split(",")
         if t.strip()
     ]
 
-    # Prepare payload sent to backend
+    # ---------------------------------------------
+    # Build request payload for FastAPI
+    # ---------------------------------------------
     payload = {
         "tickers": ticker_list,
         "start_date": str(start_date),
@@ -137,7 +256,10 @@ if launch_btn:
     }
 
     try:
-        # Backend call can take time -> show spinner
+        # -----------------------------------------
+        # Backend call
+        # -----------------------------------------
+        # The spinner improves UX for long computations.
         with st.spinner("Running optimization and portfolio analysis..."):
             response = requests.post(
                 f"{API_URL}/optimize",
@@ -145,64 +267,89 @@ if launch_btn:
                 timeout=60
             )
 
-        # =================================================
-        # Successful response
-        # =================================================
+        # -----------------------------------------
+        # SUCCESSFUL RESPONSE
+        # -----------------------------------------
         if response.status_code == 200:
+
+            # Parse JSON response
             data = response.json()
 
-            # Extract main outputs
+            # Extract core outputs
             status = data.get("status", "success")
             weights = data.get("weights", {})
             filtered_out = data.get("filtered_out", [])
             esg_scores = data.get("esg_scores", {})
 
-            # Inform user if data is simulated or live
+            # -------------------------------------
+            # Status feedback
+            # -------------------------------------
+            # Informs user whether data is real or simulated.
             if "simulated" in status or "error" in status:
                 st.warning(
                     "Demo mode enabled. "
                     "Optimization is based on simulated market data."
                 )
             else:
-                st.success("Live data detected. Optimization completed successfully.")
+                st.success(
+                    "Live data detected. Optimization completed successfully."
+                )
 
+            # -------------------------------------
             # Backtest data and metrics
+            # -------------------------------------
             perf_values = data.get("performance_values", {})
             perf_dates = data.get("performance_dates", [])
             m_hrp = data.get("metrics_hrp", {})
             m_bench = data.get("metrics_bench", {})
 
             # =================================================
-            # Section 1 – Historical performance
-            # Compare HRP vs simple equal-weight benchmark
+            # SECTION 1 – PERFORMANCE
             # =================================================
             if perf_values and perf_dates:
+
                 st.markdown("### 📈 Historical Performance (Backtest)")
 
+                # KPI layout
                 k1, k2, k3, k4 = st.columns(4)
 
-                # Display key risk/return metrics
+                # Each metric compares HRP vs benchmark
                 with k1:
-                    st.metric("Total Return", m_hrp.get("Total Return", "N/A"),
-                              delta=f"vs {m_bench.get('Total Return', 'N/A')}")
-                with k2:
-                    st.metric("Sharpe Ratio", m_hrp.get("Sharpe Ratio", "N/A"),
-                              delta=f"vs {m_bench.get('Sharpe Ratio', 'N/A')}")
-                with k3:
-                    st.metric("Annual Volatility", m_hrp.get("Annual Volatility", "N/A"),
-                              delta=f"vs {m_bench.get('Annual Volatility', 'N/A')}",
-                              delta_color="inverse")
-                with k4:
-                    st.metric("Max Drawdown", m_hrp.get("Max Drawdown", "N/A"),
-                              delta=f"vs {m_bench.get('Max Drawdown', 'N/A')}",
-                              delta_color="inverse")
+                    st.metric(
+                        "Total Return",
+                        m_hrp.get("Total Return", "N/A"),
+                        delta=f"vs {m_bench.get('Total Return', 'N/A')}"
+                    )
 
-                # Build cumulative performance dataframe
+                with k2:
+                    st.metric(
+                        "Sharpe Ratio",
+                        m_hrp.get("Sharpe Ratio", "N/A"),
+                        delta=f"vs {m_bench.get('Sharpe Ratio', 'N/A')}"
+                    )
+
+                with k3:
+                    st.metric(
+                        "Annual Volatility",
+                        m_hrp.get("Annual Volatility", "N/A"),
+                        delta=f"vs {m_bench.get('Annual Volatility', 'N/A')}",
+                        delta_color="inverse"
+                    )
+
+                with k4:
+                    st.metric(
+                        "Max Drawdown",
+                        m_hrp.get("Max Drawdown", "N/A"),
+                        delta=f"vs {m_bench.get('Max Drawdown', 'N/A')}",
+                        delta_color="inverse"
+                    )
+
+                # Build performance DataFrame
                 df_perf = pd.DataFrame(perf_values)
                 df_perf["Date"] = pd.to_datetime(perf_dates)
                 df_perf = df_perf.set_index("Date")
 
-                # Plot performance curves
+                # Plot cumulative performance
                 fig_perf = px.line(
                     df_perf,
                     x=df_perf.index,
@@ -222,11 +369,13 @@ if launch_btn:
                 st.markdown("---")
 
             # =================================================
-            # Section 2 – Allocation and ESG audit
-            # Shows final portfolio composition and ESG scores
+            # SECTION 2 – ALLOCATION & ESG AUDIT
             # =================================================
             col_chart, col_data = st.columns([1, 1])
 
+            # -------------------------
+            # Allocation pie chart
+            # -------------------------
             with col_chart:
                 st.markdown("### 📊 HRP Allocation Weights")
 
@@ -254,13 +403,16 @@ if launch_btn:
                 else:
                     st.error("No assets passed the ESG filter.")
 
+            # -------------------------
+            # ESG audit table
+            # -------------------------
             with col_data:
                 st.markdown("### 📋 ESG Governance Scores")
 
                 if esg_scores:
                     audit_data = []
 
-                    # Build ESG audit table
+                    # Build table row by row
                     for ticker, score in esg_scores.items():
                         audit_data.append({
                             "Ticker": ticker,
@@ -268,7 +420,10 @@ if launch_btn:
                             "Status": "PASS" if score >= esg_threshold else "REJECT"
                         })
 
-                    df_s = pd.DataFrame(audit_data).sort_values("Score", ascending=False)
+                    df_s = (
+                        pd.DataFrame(audit_data)
+                        .sort_values("Score", ascending=False)
+                    )
 
                     st.dataframe(
                         df_s,
@@ -278,8 +433,7 @@ if launch_btn:
                     )
 
             # =================================================
-            # Section 3 – Rejected assets log
-            # Transparency on exclusions
+            # SECTION 3 – REJECTED ASSETS LOG
             # =================================================
             if filtered_out:
                 with st.expander("🔻 Rejected Assets Log", expanded=True):
@@ -289,9 +443,13 @@ if launch_btn:
                     st.code(", ".join(filtered_out), language="text")
 
         else:
+            # Backend returned an HTTP error
             st.error(f"Server error: {response.text}")
 
     except requests.exceptions.ConnectionError:
+        # Backend is unreachable
         st.error("Connection failed. Backend is not reachable.")
+
     except Exception as e:
+        # Absolute frontend safety net
         st.error(f"Unexpected error: {e}")
