@@ -1,103 +1,68 @@
-===============================================
-
-1. SECURITY (CRITICAL)
-
-===============================================
-
+# ===============================================
+# 1. SECURITY (CRITICAL)
+# ===============================================
 .env
 .env.local
 .env.*.local
-
 secrets.json
 
-===============================================
-
-2. PYTHON & ENVIRONMENT
-
-===============================================
-
-pycache/
+# ===============================================
+# 2. PYTHON & ENVIRONMENT
+# ===============================================
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
+.eggs/
+.eggs/
 .installed.cfg
 *.egg
 MANIFEST
 
-Virtual Environments
-
-.venv
+# Virtual environments
+.venv/
 venv/
-env/
-ENV/
 
-Poetry lock file (Optionnel : gardez-le si vous voulez figer les versions exactes)
+# Poetry (RECOMMENDED TO KEEP)
+# poetry.lock
 
-poetry.lock
-
-===============================================
-
-3. TOOLS & IDEs
-
-===============================================
-
+# ===============================================
+# 3. TOOLS & IDEs
+# ===============================================
 .idea/
 .vscode/
 *.swp
 *.swo
 .DS_Store
+Desktop.ini
+Thumbs.db
 
-===============================================
-
-4. TESTING & LINTING
-
-===============================================
-
+# ===============================================
+# 4. TESTING & LINTING
+# ===============================================
 .coverage
 htmlcov/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
 
-===============================================
-
-5. DOCKER & DEPLOYMENT
-
-===============================================
-
+# ===============================================
+# 5. DOCKER & DEPLOYMENT
+# ===============================================
 .docker/
 
-===============================================
-
-6. PROJECT SPECIFIC (DATA & BROWSERS)
-
-===============================================
-
-Local data storage (MinIO simulation or local files)
-
+# ===============================================
+# 6. PROJECT SPECIFIC (DATA & BROWSERS)
+# ===============================================
 /data/
-/data/*
 !/data/.gitkeep
-
-Playwright browsers (heavy binaries downloaded locally)
-
 /ms-playwright/
 /browsers/
 
-Logs
-
+# Logs
 *.log
